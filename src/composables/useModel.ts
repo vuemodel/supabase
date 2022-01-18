@@ -39,7 +39,9 @@ export function useModel<M extends typeof Model>(
   function getUpdateableFieldKeys () {
     const fields = ModelClass.getFields()
     return Object.keys(fields)
-      .filter(field => !ignoreOnUpdateFields.includes(field))
+      .filter(field => {
+        !ignoreOnUpdateFields.includes(field) && !fields[field]
+      })
   }
 
   const form = ref<Partial<any>>({})

@@ -1,5 +1,5 @@
 import { ApiError, PostgrestError } from '@supabase/supabase-js'
-import { ref, Ref } from 'vue-demi'
+import { ref, computed, Ref } from 'vue-demi'
 import { useClient } from './useClient'
 
 export interface UseApiReturn<ResponseShape> {
@@ -10,6 +10,7 @@ export interface UseApiReturn<ResponseShape> {
   update: (id: string | number, form: Partial<any>) => Promise<void>
   error: Ref<ApiError | PostgrestError | null>
   data: Ref<ResponseShape>
+  include: Ref<string[]>
   userId: Ref<string | number | null>
   loading: Ref<boolean>
   indexing: Ref<boolean>
@@ -30,11 +31,20 @@ export function useApi<ResponseShape> (
   const loading = ref(false)
   const userId = ref(defaultUserId)
 
+  const include = ref([])
+
   const indexing = ref(false)
   const creating = ref(false)
   const finding = ref(false)
   const updating = ref(false)
   const removing = ref(false)
+
+  const includeQuery = computed<string | undefined>(() => {
+    if(!include.value.length) {
+      return undefined
+    }
+    return include.value.join('(*),') + '(*)'
+  })
 
   async function index () {
     error.value = null
@@ -43,7 +53,7 @@ export function useApi<ResponseShape> (
 
     const { data: responseData, error: err } = await supabase
       .from(entity)
-      .select()
+      .select(includeQuery.value)
 
     loading.value = false
     indexing.value = false
@@ -161,6 +171,7 @@ export function useApi<ResponseShape> (
     update,
     error,
     data,
+    include,
     userId,
     loading,
     indexing,
