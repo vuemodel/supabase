@@ -37,6 +37,7 @@ export function useApi<ResponseShape> (
   const removing = ref(false)
 
   async function index () {
+    error.value = null
     loading.value = true
     indexing.value = true
 

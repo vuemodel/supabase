@@ -1,122 +1,168 @@
-# TypeScript Boilerplate for 2021
+# What's 
 
-[![Build and test status](https://github.com/metachris/typescript-boilerplate/workflows/Lint%20and%20test/badge.svg)](https://github.com/metachris/typescript-boilerplate/actions?query=workflow%3A%22Build+and+test%22)
+# A Quick Note...
+Currently, this package is a bit of an experiment!
+If you'd like to use these concepts in production that's okay, yet I'd recommend forking this repo and making it your own. At least until these concepts standardize.
 
-TypeScript project boilerplate with modern tooling, for Node.js programs, libraries and browser modules. Get started quickly and right-footed 🚀
+Enough preamble. Let's dive in! 🤿
 
-* [TypeScript 4](https://www.typescriptlang.org/)
-* Optionally [esbuild](https://esbuild.github.io/) to bundle for browsers (and Node.js)
-* Linting with [typescript-eslint](https://github.com/typescript-eslint/typescript-eslint) ([tslint](https://palantir.github.io/tslint/) is deprecated)
-* Testing with [Jest](https://jestjs.io/docs/getting-started) (and [ts-jest](https://www.npmjs.com/package/ts-jest))
-* Publishing to npm
-* Continuous integration ([GitHub Actions](https://docs.github.com/en/actions) / [GitLab CI](https://docs.gitlab.com/ee/ci/))
-* Automatic API documentation with [TypeDoc](https://typedoc.org/guides/doccomments/)
+## Installation
+```js
+import { SupabasePlugin } from '@vuemodel/supabase'
 
-See also the introduction blog post: **[Starting a TypeScript Project in 2021](https://www.metachris.com/2021/03/bootstrapping-a-typescript-node.js-project/)**.
-
-
-## Getting Started
-
-```bash
-# Clone the repository (you can also click "Use this template")
-git clone https://github.com/metachris/typescript-boilerplate.git your_project_name
-cd your_project_name
-
-# Edit `package.json` and `tsconfig.json` to your liking
-...
-
-# Install dependencies
-yarn install
-
-# Now you can run various yarn commands:
-yarn cli
-yarn lint
-yarn test
-yarn build-all
-yarn ts-node <filename>
-yarn esbuild-browser
-...
+Vue.install(SupabasePlugin, {
+  credentials: {
+    supabaseUrl: 'your-supabase-url',
+    supabaseKey: 'your-supabase-key'
+  }
+})
 ```
 
-* Take a look at all the scripts in [`package.json`](https://github.com/metachris/typescript-boilerplate/blob/master/package.json)
-* For publishing to npm, use `yarn publish` (or `npm publish`)
+## Usage
 
-## esbuild
+### useModel
+```js
+import { useModel } from '@vuemodel/supabase'
 
-[esbuild](https://esbuild.github.io/) is an extremely fast bundler that supports a [large part of the TypeScript syntax](https://esbuild.github.io/content-types/#typescript). This project uses it to bundle for browsers (and Node.js if you want).
+export default class Todo extends Model {
+  static entity = 'todos'
 
-```bash
-# Build for browsers
-yarn esbuild-browser:dev
-yarn esbuild-browser:watch
+  static fields () {
+    return {
+      id: this.uid(),
+      title: this.string(''),
+      done: this.boolean(false),
+    }
+  }
+}
 
-# Build the cli for node
-yarn esbuild-node:dev
-yarn esbuild-node:watch
+const todoService = useModel(Todo)
+
+/**
+ * 🤿 When finding, upating, or deleting a model
+ * You first need to set the id
+ */
+todoService.id.value = 7
+todoService.find()
+todoService.remove()
+
+/**
+ * 🤿 When creating/updating a new model, the form is
+ * already generated for you!
+ */
+
+// Creating
+todoService.form.value {
+  title: 'buy shoes',
+  done: false
+}
+todoService.create()
+
+// Updating
+todoService.form.value {
+  done: true
+}
+todoService.update()
+
+/**
+ * Of course, we have access to the model
+ */
+todoService.id.value = 7
+console.log(todoService.model.value)
+
+/**
+ * Need to reset the form? Gotcha covered!
+ */
+todoService.resetForm()
+
+/**
+ * You don't even have to deal with errors!
+ */
+todoService.form.value {
+  done: 'this should be a boolean 😱'
+}
+await todoService.update()
+console.log(todoService.error.value)
+
+/**
+ * We have access to all of the models
+ * possible loading states...
+ */
+todoService.creating.value
+todoService.finding.value
+todoService.updating.value
+todoService.removing.value
+todoService.loading.value
 ```
 
-You can generate a full clean build with `yarn build-all` (which uses both `tsc` and `esbuild`).
+### useModelCollection
+useModelCollection hasn't been fleshed out yet!
+More to come :)
+```js
+import { useModelCollection } from '@vuemodel/supabase'
 
-* `package.json` includes `scripts` for various esbuild commands: [see here](https://github.com/metachris/typescript-boilerplate/blob/master/package.json#L23)
-* `esbuild` has a `--global-name=xyz` flag, to store the exports from the entry point in a global variable. See also the [esbuild "Global name" docs](https://esbuild.github.io/api/#global-name).
-* Read more about the esbuild setup [here](https://www.metachris.com/2021/04/starting-a-typescript-project-in-2021/#esbuild).
-* esbuild for the browser uses the IIFE (immediately-invoked function expression) format, which executes the bundled code on load (see also https://github.com/evanw/esbuild/issues/29)
+export default class Todo extends Model {
+  static entity = 'todos'
 
+  static fields () {
+    return {
+      id: this.uid(),
+      title: this.string(''),
+      done: this.boolean(false),
+    }
+  }
+}
 
-## Tests with Jest
+const todoCollectionService = useModel(Todo)
 
-You can write [Jest tests](https://jestjs.io/docs/getting-started) [like this](https://github.com/metachris/typescript-boilerplate/blob/master/src/main.test.ts):
+/**
+ * 🤿 Let's go get some models from the backend!
+ */
+todoCollectionService.index()
 
-```typescript
-import { greet } from './main'
+/**
+ * 🤿 Filter models by ids
+ */
+todoCollectionService.ids.value = [1,3,5]
 
-test('the data is peanut butter', () => {
-  expect(1).toBe(1)
-});
+/**
+ * 🤿 Of course, you'll want access to the collection...
+ */
+todoCollectionService.collection.value
 
-test('greeting', () => {
-  expect(greet('Foo')).toBe('Hello Foo')
-});
+/**
+ * 🤿 Want to add in a loading spinner?
+ */
+todoCollectionService.indexing.value
+
+/**
+ * 🤿 And finally, let's take a look at error handling
+ */
+await todoCollectionService.index()
+console.log(todoCollectionService.error.value)
 ```
 
-Run the tests with `yarn test`, no separate compile step is necessary.
+## Destructuring
+Note that in the real world, you'll probably want to use destructuring. For example:
 
-* See also the [Jest documentation](https://jestjs.io/docs/getting-started).
-* The tests can be automatically run in CI (GitHub Actions, GitLab CI): [`.github/workflows/lint-and-test.yml`](https://github.com/metachris/typescript-boilerplate/blob/master/.github/workflows/lint-and-test.yml), [`.gitlab-ci.yml`](https://github.com/metachris/typescript-boilerplate/blob/master/.gitlab-ci.yml)
-* Take a look at other modern test runners such as [ava](https://github.com/avajs/ava), [uvu](https://github.com/lukeed/uvu) and [tape](https://github.com/substack/tape)
+```vue
+<script setup>
+const { form, create, creating, error } = useModel(Todo)
+</script>
 
-## Documentation, published with CI
+<template>
+<input v-model="form.title">
 
-You can auto-generate API documentation from the TyoeScript source files using [TypeDoc](https://typedoc.org/guides/doccomments/). The generated documentation can be published to GitHub / GitLab pages through the CI.
+<button :disabled="creating" @click="create">create</button>
 
-Generate the documentation, using `src/main.ts` as entrypoint (configured in package.json):
-
-```bash
-yarn docs
+<span v-if="creating">creating...</span>
+<span v-if="error">{{ error.message }}</span>
+</template>
 ```
 
-The resulting HTML is saved in `docs/`.
-
-You can publish the documentation through CI:
-* [GitHub pages](https://pages.github.com/): See [`.github/workflows/deploy-gh-pages.yml`](https://github.com/metachris/typescript-boilerplate/blob/master/.github/workflows/deploy-gh-pages.yml)
-* [GitLab pages](https://docs.gitlab.com/ee/user/project/pages/): [`.gitlab-ci.yml`](https://github.com/metachris/typescript-boilerplate/blob/master/.gitlab-ci.yml)
-
-This is the documentation for this boilerplate project: https://metachris.github.io/typescript-boilerplate/
-
-## References
-
-* **[Blog post: Starting a TypeScript Project in 2021](https://www.metachris.com/2021/03/bootstrapping-a-typescript-node.js-project/)**
-* [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
-* [tsconfig docs](https://www.typescriptlang.org/tsconfig)
-* [esbuild docs](https://esbuild.github.io/)
-* [typescript-eslint docs](https://github.com/typescript-eslint/typescript-eslint/blob/master/docs/getting-started/linting/README.md)
-* [Jest docs](https://jestjs.io/docs/getting-started)
-* [GitHub Actions](https://docs.github.com/en/actions), [GitLab CI](https://docs.gitlab.com/ee/ci/)
-
-
-## Feedback
-
-Reach out with feedback and ideas:
-
-* [twitter.com/metachris](https://twitter.com/metachris)
-* [Create a new issue](https://github.com/metachris/typescript-boilerplate/issues)
+## Coming Soon!
+I'll likely add:
+- Scoping
+- Filtering
+- Batch operations
+As the Supabase API makes this possible! So stay tuned for that 😄
