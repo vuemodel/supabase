@@ -1,6 +1,6 @@
 {
   "name": "@vuemodel/supabase",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Marrying the composition API with VuexOrm and Supabase",
   "author": "Luke Diebold",
   "repository": "https://github.com/vuemodel/supabase",

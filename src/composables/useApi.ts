@@ -58,6 +58,7 @@ export function useApi<ResponseShape> (
   }
 
   async function create (form: Partial<any>) {
+    error.value = null
     if (userId.value) {
       form.user_id = userId.value
     }
