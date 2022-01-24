@@ -43,7 +43,7 @@ export function useModel<M extends typeof Model>(
     const fields = ModelClass.getFields()
     return Object.keys(fields)
       .filter(field => {
-        !ignoreOnUpdateFields.includes(field) && !fields[field]
+        return !ignoreOnUpdateFields.includes(field)
       })
   }
 
