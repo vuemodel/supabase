@@ -1,8 +1,9 @@
 import { ApiError, PostgrestError } from '@supabase/supabase-js'
-import { useApi } from './useApi'
+import { StandardError, useApi } from './useApi'
 import { InstanceOf, Item, Model } from '@vuex-orm/core'
 import { Ref } from 'vue-demi'
 import { useClient } from './useClient'
+import QueryBuilder from '../query/QueryBuilder'
 
 export interface UseModelApiReturn<M extends typeof Model> {
   create: (form: Partial<any>) => Promise<void>
@@ -10,8 +11,9 @@ export interface UseModelApiReturn<M extends typeof Model> {
   update: (id: string | number, form: Partial<any>) => Promise<void>
   remove: (id: string | number) => Promise<void>
   index: () => Promise<void>
+  query: QueryBuilder
   data: Ref<Item<InstanceOf<M>>>
-  error: Ref<ApiError | PostgrestError | null>
+  error: Ref<ApiError | PostgrestError | StandardError | null>
   userId: Ref<string | number | null>
   indexing: Ref<boolean>
   creating: Ref<boolean>
@@ -79,6 +81,7 @@ export function useModelApi<M extends typeof Model> (
     update,
     remove,
     index,
+    query: apiService.query,
     data: apiService.data,
     error: apiService.error,
     userId: apiService.userId,

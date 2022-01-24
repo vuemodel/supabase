@@ -1,5 +1,6 @@
 import { ApiError, PostgrestError } from '@supabase/supabase-js'
-import { ref, computed, Ref } from 'vue-demi'
+import { ref, Ref } from 'vue-demi'
+import QueryBuilder from '../query/QueryBuilder'
 import { useClient } from './useClient'
 
 export interface UseApiReturn<ResponseShape> {
@@ -8,7 +9,8 @@ export interface UseApiReturn<ResponseShape> {
   remove: (id: string | number) => Promise<void>
   find: (id: string | number) => Promise<void>
   update: (id: string | number, form: Partial<any>) => Promise<void>
-  error: Ref<ApiError | PostgrestError | null>
+  query: QueryBuilder
+  error: Ref<ApiError | PostgrestError | StandardError | null>
   data: Ref<ResponseShape>
   include: Ref<string[]>
   userId: Ref<string | number | null>
@@ -20,13 +22,17 @@ export interface UseApiReturn<ResponseShape> {
   removing: Ref<boolean>
 }
 
+export interface StandardError {
+  message: string
+}
+
 export function useApi<ResponseShape> (
   entity: string,
   defaultUserId: string | null = null
 ): UseApiReturn<ResponseShape> {
   const supabase = useClient()
 
-  const error = ref<ApiError | PostgrestError | null>(null)
+  const error = ref<ApiError | PostgrestError | StandardError | null>(null)
   const data = ref()
   const loading = ref(false)
   const userId = ref(defaultUserId)
@@ -39,21 +45,35 @@ export function useApi<ResponseShape> (
   const updating = ref(false)
   const removing = ref(false)
 
-  const includeQuery = computed<string | undefined>(() => {
-    if(!include.value.length) {
-      return undefined
-    }
-    return include.value.join('(*),') + '(*)'
-  })
+  // const includeQuery = computed<string | undefined>(() => {
+  //   if(!include.value.length) {
+  //     return undefined
+  //   }
+  //   return include.value.join('(*),') + '(*)'
+  // })
+
+  let builder = new QueryBuilder()
+
+  function resetBuilder () {
+    builder = new QueryBuilder()
+  }
 
   async function index () {
     error.value = null
     loading.value = true
     indexing.value = true
 
-    const { data: responseData, error: err } = await supabase
+    const supabaseQueryBuilder = supabase
       .from(entity)
-      .select(includeQuery.value)
+
+    const query = builder.runWith(supabaseQueryBuilder)
+
+    const {
+      data: responseData,
+      error: err
+    } = await query
+
+    resetBuilder()
 
     loading.value = false
     indexing.value = false
@@ -94,11 +114,23 @@ export function useApi<ResponseShape> (
   async function find (id: string | number) {
     loading.value = true
     finding.value = true
+    if(typeof id === 'number') {
+      id = id.toString()
+    }
 
-    const { data: responseData, error: err } = await supabase
+    const supabaseQueryBuilder = supabase
       .from(entity)
-      .select()
-      .eq('id', id)
+
+    builder.where('id', id)
+
+    const query = builder.runWith(supabaseQueryBuilder)
+
+    const {
+      data: responseData,
+      error: err
+    } = await query
+
+    resetBuilder()
 
     loading.value = false
     finding.value = false
@@ -107,11 +139,8 @@ export function useApi<ResponseShape> (
       error.value = err
       return
     }
-    if (!responseData?.length) {
-      error.value = {
-        status: 0,
-        message: `${entity} with id ${id} not found`
-      }
+    if (Array.isArray(responseData) && !responseData.length) {
+      error.value = { message: `${entity} with id ${id} not found` }
     }
     if (responseData) {
       data.value = responseData?.[0]
@@ -169,6 +198,7 @@ export function useApi<ResponseShape> (
     remove,
     find,
     update,
+    query: builder,
     error,
     data,
     include,

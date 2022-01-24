@@ -3,17 +3,20 @@ import { useModelApi } from './useModelApi'
 import { ref, computed, watch, Ref, ComputedRef } from 'vue-demi'
 import { InstanceOf, Item } from '@vuex-orm/core'
 import { Model } from '../types'
+import { StandardError } from './useApi'
+import QueryBuilder from '../query/QueryBuilder'
 
 export interface UseModelReturn<M extends typeof Model> {
-  create: (form: Partial<any>) => Promise<void>
+  create: (customForm?: Partial<any>) => Promise<void>
   find: () => Promise<void>
   update: () => Promise<void>
   remove: () => Promise<void>
+  query: QueryBuilder
   model: ComputedRef<Item<InstanceOf<M>>>
   form: Partial<any>
   resetForm: () => void
   id: Ref<string | number | null>
-  error: Ref<ApiError | PostgrestError | null>
+  error: Ref<ApiError | PostgrestError | StandardError | null>
   creating: Ref<boolean>
   finding: Ref<boolean>
   updating: Ref<boolean>
@@ -71,8 +74,12 @@ export function useModel<M extends typeof Model>(
     resetForm()
   }, { immediate: true })
 
-  async function create (form: Partial<any>) {
-    await modelApi.create(form)
+  async function create (customForm?: Partial<any>) {
+    if(customForm) {
+      await modelApi.create(customForm)
+    } else {
+      await modelApi.create(form.value)
+    }
     id.value = modelApi.data?.value?.id
   }
 
@@ -112,6 +119,7 @@ export function useModel<M extends typeof Model>(
     form,
     resetForm,
     id,
+    query: modelApi.query,
     error: modelApi.error,
     creating: modelApi.creating,
     finding: modelApi.finding,
