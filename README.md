@@ -1,5 +1,3 @@
-# What's 
-
 # A Quick Note...
 Currently, this package is a bit of an experiment!
 If you'd like to use these concepts in production that's okay, yet I'd recommend forking this repo and making it your own. At least until these concepts standardize.
